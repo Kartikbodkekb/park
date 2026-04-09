@@ -1,5 +1,4 @@
 
-import asyncio
 import os
 import sys
 import textwrap
@@ -64,12 +63,12 @@ def build_user_prompt(step: int, obs: dict, last_reward: float, history: List[st
     """).strip()
 
 # ── MAIN RUNNER ───────────────────────────────────────────────────────────────
-async def main() -> None:
+def main() -> None:
     if not API_KEY:
         raise ValueError("HF_TOKEN missing in .env")
 
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
-    env = await ParkEnvironment.from_docker_image(IMAGE_NAME)
+    env = ParkEnvironment.from_docker_image(IMAGE_NAME)
 
     tasks_to_run = ["easy", "medium", "hard"]
     all_results  = {}
@@ -86,13 +85,15 @@ async def main() -> None:
         log_start(current_task, BENCHMARK, MODEL_NAME)
 
         try:
-            result = await env.reset(task=current_task)
-            obs    = result.observation
+            # 1. INITIALIZE THE EPISODE (Notice we use .model_dump() here)
+            result = env.reset(task=current_task)
+            obs    = result.observation.model_dump() 
 
             for step in range(1, task_max_steps + 1):
                 if result.done:
                     break
 
+                # The prompt expects 'obs' to be a dict, which it now is!
                 prompt   = build_user_prompt(step, obs, last_reward, history)
                 response = client.chat.completions.create(
                     model=MODEL_NAME,
@@ -107,13 +108,16 @@ async def main() -> None:
                 if not action:
                     action = "wait"
 
-                result      = await env.step(action)
+                # 2. TAKE THE ACTION
+                result       = env.step(action)
                 reward, done = result.reward, result.done
 
                 rewards.append(reward)
                 steps_taken = step
                 last_reward = reward
-                obs         = result.observation
+                
+                # 3. GET THE NEW OBSERVATION (Notice we use .model_dump() here too)
+                obs = result.observation.model_dump() 
 
                 error_msg = obs.get("last_action_result") if done else None
                 log_step(step, action, reward, done, error_msg)
@@ -122,7 +126,8 @@ async def main() -> None:
                 if done:
                     break
 
-            score   = await env.grade()
+            # 4. GRADE THE EPISODE
+            score   = env.grade()
             success = obs.get("parked", False)
             price_paid = obs.get("price_paid", 0.0)
             all_results[current_task] = {"score": score, "price": price_paid}
@@ -132,7 +137,6 @@ async def main() -> None:
             all_results[current_task] = {"score": 0.0, "price": 0.0}
         finally:
             log_end(success, steps_taken, score, rewards)
-
     # ── FINAL SUMMARY ─────────────────────────────────────────────────────────
     print(f"\n{'='*60}", flush=True)
     print("FINAL SCORES", flush=True)
@@ -148,10 +152,10 @@ async def main() -> None:
     print(f"{'='*60}", flush=True)
 
     try:
-        await env.close()
+        env.close()
     except Exception as e:
         print(f"[DEBUG] env.close() error: {e}", flush=True)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
