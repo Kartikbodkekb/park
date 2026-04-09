@@ -1,8 +1,8 @@
 ---
 title: Park Environment Server
-emoji: ⏱️
-colorFrom: indigo
-colorTo: purple
+emoji: 🔈
+colorFrom: blue
+colorTo: green
 sdk: docker
 pinned: false
 app_port: 8000
