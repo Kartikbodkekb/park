@@ -36,7 +36,7 @@ except Exception as e:  # pragma: no cover
     ) from e
 
 try:
-    from ..models import ParkAction, ParkObservation
+    from models import ParkAction, ParkObservation
     from .park_environment import ParkEnvironment
 except ModuleNotFoundError:
     from models import ParkAction, ParkObservation
