@@ -174,11 +174,14 @@ class ParkEnvironment(Environment):
             info={"episode_id": self._episode_id}
         )
 
-    def step(self, action_input: Any) -> ParkObservation:
-        """Execute one step and return the observation."""
+    def step(self, action_input: Any) -> State:
         if self._done:
-            raise RuntimeError("Episode is over. Call reset() to start a new one.")
-
+            raise RuntimeError(...)
+        
+        # ✅ ADD THESE LINES:
+        if hasattr(action_input, 'task') and action_input.task:
+            self.set_task(action_input.task)
+        
         act = action_input.action if hasattr(action_input, 'action') else action_input
 
         self._step_count += 1

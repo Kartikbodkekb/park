@@ -20,6 +20,13 @@ class ParkAction(Action):
     The action the agent takes at each step.
     One of five possible actions.
     """
+    
+    # ✅ ADD THIS: Task selector
+    task: Literal["easy", "medium", "hard"] = Field(
+        default="easy",
+        description="Select the difficulty level"
+    )
+    
     action: Literal[
         "move_to_nearby",   # Move towards the nearby parking area
         "move_to_far",      # Move towards a distant (cheaper/emptier) parking area
@@ -30,7 +37,6 @@ class ParkAction(Action):
         ...,
         description="The action to take in the current step."
     )
-
 
 # ****************************** Obseravtion *********************************
 class ParkObservation(BaseModel):
