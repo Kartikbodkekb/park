@@ -91,7 +91,7 @@ TASK_CONFIGS = {
         "nearby_distance_range": (0.05, 0.15),
         "nearby_type": "private",
         "nearby_facilities": [],
-        "far_slots_range": (0, 2),        # far is now the scarce one     -11-04-2026
+        "far_slots_range": (1, 2),        # far is now the scarce one     -11-04-2026
         "far_price_range": (30.0, 60.0),
         "far_distance_range": (1.5, 3.0), # farther walk   -11-04-2026
         "far_type": "street",
