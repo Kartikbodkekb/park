@@ -7,7 +7,8 @@
 """
 Data models for the Park Environment.
 
-The park environment is a simple test environment that echoes back messages.
+Defines the Action, Observation, and Reward models for the urban parking
+search environment simulating congested Indian city parking scenarios.
 """
 
 from openenv.core.env_server.types import Action, Observation
