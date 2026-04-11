@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from server.park_environment import ParkEnvironment
 
 # ── MANDATORY CONFIGURATION ───────────────────────────────────────────────────
-IMAGE_NAME   = os.getenv("LOCAL_IMAGE_NAME") or os.getenv("IMAGE_NAME")
+IMAGE_NAME   = os.getenv("LOCAL_IMAGE_NAME") or os.getenv("IMAGE_NAME") or "park-env:latest"  #added or "park-env:latest" this on 11-04 
 API_KEY      = os.getenv("HF_TOKEN") 
 API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME   = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
