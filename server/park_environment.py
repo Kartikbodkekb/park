@@ -7,8 +7,9 @@
 """
 Park Environment Implementation.
 
-A simple test environment that echoes back messages sent to it.
-Perfect for testing HTTP server infrastructure.
+Park Environment — Urban parking simulation for Indian cities.
+An agent navigates traffic, competition, and scarce slots to park efficiently.
+Tasks: easy (residential), medium (shopping), hard (festival market).
 """
 
 from uuid import uuid4
@@ -83,22 +84,22 @@ TASK_CONFIGS = {
         "zone_type": "market",
         "description": "Tulshibaug / Dagdusheth Festival — very high congestion, scarce parking.",
         "max_time": 40,
-        "max_fuel": 1.0,
+        "max_fuel": 0.6,      # agent starts with only 60% fuel — creates pressure  --11-04-2026
         "max_price": 100.0,
-        "nearby_slots_range": (0, 2),
+        "nearby_slots_range": (1,3),     # slots exist but very few    -11-04-2026
         "nearby_price_range": (60.0, 100.0),
         "nearby_distance_range": (0.05, 0.15),
         "nearby_type": "private",
         "nearby_facilities": [],
-        "far_slots_range": (1, 4),
+        "far_slots_range": (0, 2),        # far is now the scarce one     -11-04-2026
         "far_price_range": (30.0, 60.0),
-        "far_distance_range": (1.0, 2.5),
+        "far_distance_range": (1.5, 3.0), # farther walk   -11-04-2026
         "far_type": "street",
         "far_facilities": ["open"],
         "traffic_weights": {"low": 0.0, "medium": 0.1, "high": 0.4, "very_high": 0.5},
         "competition_weights": {"low": 0.0, "medium": 0.2, "high": 0.8},
-        "crowd_spike_prob": 0.40,
-        "road_block_prob": 0.25,
+        "crowd_spike_prob":0.55,         # more than half the time
+        "road_block_prob": 0.35,          # frequent blockages
         "time_of_day": "evening",
         "day_type": "weekend",
         "is_festival": True,
@@ -176,7 +177,7 @@ class ParkEnvironment(Environment):
 
     def step(self, action_input: Any) -> State:
         if self._done:
-            raise RuntimeError(...)
+            raise RuntimeError("Episode is done. Call reset() first.")
         
         # ✅ ADD THESE LINES:
         if hasattr(action_input, 'task') and action_input.task:
@@ -357,7 +358,7 @@ class ParkEnvironment(Environment):
             far_facilities=cfg["far_facilities"],
             crowd_spike=random.random() < cfg["crowd_spike_prob"],
             road_blocked=random.random() < cfg["road_block_prob"],
-            fuel_level=1.0,
+            fuel_level=cfg["max_fuel"],
             time_elapsed=0,
             last_action_result=None,
             parked=False,

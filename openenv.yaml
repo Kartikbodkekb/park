@@ -4,4 +4,10 @@ type: space
 runtime: fastapi
 app: server.app:app
 port: 8000
-
+tasks:
+  - name: easy
+    description: "Quiet residential area — low traffic, ample parking"
+  - name: medium
+    description: "Busy shopping area — moderate traffic, limited slots"
+  - name: hard
+    description: "Festival zone — very high congestion, scarce parking"

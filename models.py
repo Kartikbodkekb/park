@@ -39,7 +39,7 @@ class ParkAction(Action):
     )
 
 # ****************************** Obseravtion *********************************
-class ParkObservation(BaseModel):
+class ParkObservation(Observation):
     zone_type: Literal["residential", "shopping", "market"] = Field(
         description="Type of urban zone being navigated."
     )

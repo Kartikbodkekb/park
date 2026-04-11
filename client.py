@@ -94,6 +94,6 @@ class ParkEnv:
         url = f"{self.base_url}{path}"
         resp = self._session.get(url, params=params, timeout=self.timeout)
         resp.raise_for_status()
-        return resp.json
+        return resp.json()
 
     
