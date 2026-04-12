@@ -81,28 +81,28 @@ TASK_CONFIGS = {
         "is_festival": False,
     },
     "hard": {
-        "zone_type": "market",
-        "description": "Tulshibaug / Dagdusheth Festival — very high congestion, scarce parking.",
-        "max_time": 40,
-        "max_fuel": 0.6,      # agent starts with only 60% fuel — creates pressure  --11-04-2026
-        "max_price": 100.0,
-        "nearby_slots_range": (1,3),     # slots exist but very few    -11-04-2026
-        "nearby_price_range": (60.0, 100.0),
-        "nearby_distance_range": (0.05, 0.15),
-        "nearby_type": "private",
-        "nearby_facilities": [],
-        "far_slots_range": (1, 2),        # far is now the scarce one     -11-04-2026
-        "far_price_range": (30.0, 60.0),
-        "far_distance_range": (1.5, 3.0), # farther walk   -11-04-2026
-        "far_type": "street",
-        "far_facilities": ["open"],
-        "traffic_weights": {"low": 0.0, "medium": 0.1, "high": 0.4, "very_high": 0.5},
-        "competition_weights": {"low": 0.0, "medium": 0.2, "high": 0.8},
-        "crowd_spike_prob":0.55,         # more than half the time
-        "road_block_prob": 0.35,          # frequent blockages
-        "time_of_day": "evening",
-        "day_type": "weekend",
-        "is_festival": True,
+    "zone_type": "market",
+    "description": "Tulshibaug / Dagdusheth Festival — very high congestion, scarce parking, fuel pressure.",
+    "max_time": 40,
+    "max_fuel": 0.6,
+    "max_price": 100.0,      
+    "nearby_slots_range": (1, 3),
+    "nearby_price_range": (70.0, 100.0),
+    "nearby_distance_range": (0.05, 0.15),
+    "nearby_type": "private",
+    "nearby_facilities": [],
+    "far_slots_range": (0, 2),
+    "far_price_range": (40.0, 70.0),
+    "far_distance_range": (1.5, 3.0),
+    "far_type": "street",
+    "far_facilities": ["open"],
+    "traffic_weights": {"low": 0.0, "medium": 0.05, "high": 0.35, "very_high": 0.60},
+    "competition_weights": {"low": 0.0, "medium": 0.1, "high": 0.9},
+    "crowd_spike_prob": 0.55,
+    "road_block_prob": 0.35,
+    "time_of_day": "evening",
+    "day_type": "weekend",
+    "is_festival": True,
     },
 }
 

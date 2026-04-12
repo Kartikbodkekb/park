@@ -119,7 +119,10 @@ def main() -> None:
                 # 3. GET THE NEW OBSERVATION (Notice we use .model_dump() here too)
                 obs = result.observation.model_dump() 
 
-                error_msg = obs.get("last_action_result") if done else None
+                # error_msg = obs.get("last_action_result") if done else None  --Removed by kartik on 12-4-26   --Added lines 123 & 124
+                last_result = obs.get("last_action_result") or ""                                
+                error_msg = None if "Successfully parked" in last_result else last_result or None
+
                 log_step(step, action, reward, done, error_msg)
                 history.append(f"S{step}: {action}({reward:+.1f})")
 

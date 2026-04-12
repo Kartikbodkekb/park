@@ -17,22 +17,132 @@ An urban parking RL environment simulating congested Indian city parking scenari
 
 Inspired by real parking conditions in Pune, India across three zone types: quiet residential areas, busy shopping districts, and high-congestion festival markets (Tulshibaug / Dagdusheth).
 
-## Quick Start
+## Project Structure
 
-The simplest way to use the Park environment is through the `ParkEnv` class:
+```
+park-main/
+├── Dockerfile                  # Container image definition
+├── README.md                   # This file
+├── openenv.yaml                # OpenEnv manifest with task definitions
+├── pyproject.toml              # Project metadata and dependencies
+├── uv.lock                     # Locked dependencies (generated)
+├── .gitignore
+├── __init__.py                 # Module exports (ParkAction, ParkObservation, ParkEnv)
+├── client.py                   # ParkEnv HTTP client
+├── models.py                   # Action, Observation, and Reward Pydantic models
+├── inference.py                # Baseline inference script (runs all 3 tasks)
+└── server/
+    ├── __init__.py             # Server module exports
+    ├── park_environment.py     # Core environment logic (step, reset, grade)
+    ├── app.py                  # FastAPI application (HTTP + WebSocket endpoints)
+    └── requirements.txt        # Server dependencies
+```
+
+## Setup & Running
+
+### Prerequisites
+
+- Python 3.10+
+- Docker
+- `uv` (recommended) or `pip`
+- OpenEnv: `pip install openenv-core`
+
+### Option 1 — Run Locally (without Docker)
+
+```bash
+# Clone the repo
+git clone https://github.com/Kartikbodkekb/park.git
+cd park-main
+
+# Install dependencies with uv (recommended)
+uv sync
+
+# Or with pip
+pip install -e .
+
+# Start the server
+uvicorn server.app:app --host 0.0.0.0 --port 8000
+```
+
+The server will be available at `http://localhost:8000`. Visit `http://localhost:8000/web` for the interactive web UI and `http://localhost:8000/docs` for the API docs.
+
+### Option 2 — Run with Docker
+
+```bash
+# From project root — build the Docker image
+docker build -t park-env:latest .
+
+# Run the container
+docker run -p 8000:8000 park-env:latest
+```
+
+### Running the Baseline Inference Script
+
+Set up your `.env` file (or export variables directly):
+
+```bash
+HF_TOKEN=your_huggingface_token
+API_BASE_URL=https://router.huggingface.co/v1
+MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
+```
+
+Then run:
+
+```bash
+python inference.py
+```
+
+Expected output format:
+
+```
+============================================================
+Running task: EASY
+============================================================
+[START] task=easy env=smart_parking_env model=Qwen/Qwen2.5-72B-Instruct
+[STEP] step=1 action=move_to_nearby reward=0.83 done=true error=null
+[END] success=true steps=1 score=0.890 rewards=0.83
+
+============================================================
+Running task: MEDIUM
+============================================================
+[START] task=medium env=smart_parking_env model=Qwen/Qwen2.5-72B-Instruct
+[STEP] step=1 action=move_to_nearby reward=0.45 done=true error=null
+[END] success=true steps=1 score=0.846 rewards=0.45
+
+============================================================
+Running task: HARD
+============================================================
+[START] task=hard env=smart_parking_env model=Qwen/Qwen2.5-72B-Instruct
+[STEP] step=1 action=wait reward=-0.27 done=false error=Agent waited one step. A slot opened up nearby!
+[STEP] step=2 action=move_to_nearby reward=-0.11 done=true error=null
+[END] success=true steps=2 score=0.776 rewards=-0.27,-0.11
+
+============================================================
+FINAL SCORES
+============================================================
+  easy      : 0.8900 (Paid: Rs.14)
+  medium    : 0.8460 (Paid: Rs.42)
+  hard      : 0.7765 (Paid: Rs.98)
+  average   : 0.8375
+============================================================
+```
+
+## Quick Start (Client Usage)
+
+Once the server is running, interact with it using the `ParkEnv` client:
 
 ```python
-from park import ParkAction, ParkEnv
+from client import ParkEnv
+from models import ParkAction
 
 try:
-    # Connect to running HF Space or local server
     parkenv = ParkEnv(base_url="http://localhost:8000", task="easy")
 
     # Reset environment
-    result = parkenv.reset()
-    print(f"Zone: {result.zone_type}")
-    print(f"Nearby slots: {result.nearby_slots}")
-    print(f"Traffic: {result.traffic_level}")
+    obs = parkenv.reset()
+    print(f"Zone: {obs.zone_type}")
+    print(f"Nearby slots: {obs.nearby_slots}")
+    print(f"Traffic: {obs.traffic_level}")
 
     # Run a few steps
     actions = ["move_to_nearby", "wait", "move_to_far"]
@@ -111,7 +221,7 @@ Three difficulty levels, each simulating a different real-world parking scenario
 
 ### Reward Function
 
-The reward is a dense multi-component signal provided at every step — not just at the end of the episode. This gives the agent useful learning signal throughout the episode.
+The reward is a dense multi-component signal provided at every step — not just at the end of the episode.
 
 | Component | Value | When Triggered |
 |-----------|-------|----------------|
@@ -128,7 +238,7 @@ The reward is a dense multi-component signal provided at every step — not just
 
 ### Grader
 
-After each episode, `grade()` returns a score between **0.0 and 1.0** based on four weighted components:
+After each episode, `grade()` returns a score between **0.0 and 1.0**:
 
 ```
 score = 0.4 × success + 0.2 × time_score + 0.2 × fuel_score + 0.2 × cost_score
@@ -149,130 +259,9 @@ Approximate scores using `Qwen/Qwen2.5-72B-Instruct` as the baseline agent:
 
 | Task | Typical Score Range |
 |------|-------------------|
-| `easy` | 0.55 – 0.75 |
-| `medium` | 0.35 – 0.55 |
-| `hard` | 0.10 – 0.30 |
-
-## Setup & Usage
-
-### Prerequisites
-
-- Python 3.10+
-- Docker
-- Hugging Face CLI: `pip install huggingface_hub`
-- OpenEnv: `pip install openenv-core`
-
-### Running Locally
-
-```bash
-# Clone the repo
-git clone https://github.com/Kartikbodkekb/park.git
-cd park
-
-# Install dependencies with uv (recommended)
-uv sync
-
-# Or with pip
-pip install -e .
-
-# Run the server
-uvicorn server.app:app --host 0.0.0.0 --port 8000
-```
-
-The server will be available at `http://localhost:8000`. Visit `http://localhost:8000/web` for the interactive web UI.
-
-### Building and Running with Docker
-
-```bash
-# From project root — build the Docker image
-docker build -t park-env:latest .
-
-# Run the container
-docker run -p 8000:8000 park-env:latest
-```
-
-### Running the Baseline Inference Script
-
-```bash
-# Set required environment variables
-export HF_TOKEN=your_huggingface_token
-export API_BASE_URL=https://router.huggingface.co/v1
-export MODEL_NAME=Qwen/Qwen2.5-72B-Instruct
-
-# Run inference across all 3 tasks
-python inference.py
-```
-
-Expected output format:
-```
-============================================================
-Running task: EASY
-============================================================
-[START] task=easy env=smart_parking_env model=Qwen/Qwen2.5-72B-Instruct
-[STEP] step=1 action=move_to_nearby reward=0.85 done=false error=null
-[STEP] step=2 action=move_to_nearby reward=0.74 done=true error=null
-[END] success=true steps=2 score=0.823 rewards=0.85,0.74
-
-============================================================
-Running task: MEDIUM
-============================================================
-[START] task=medium env=smart_parking_env model=Qwen/Qwen2.5-72B-Instruct
-...
-
-============================================================
-FINAL SCORES
-============================================================
-  easy      : 0.8230 (Paid: Rs.15)
-  medium    : 0.5410 (Paid: Rs.35)
-  hard      : 0.2150 (Paid: Rs.80)
-  average   : 0.5263
-============================================================
-```
-
-## Deploying to Hugging Face Spaces
-
-```bash
-# From the environment directory (where openenv.yaml is located)
-openenv push
-
-# Or specify a target repo
-openenv push --repo-id your-username/park
-
-# Push as private
-openenv push --private
-```
-
-After deployment your space will be available at:
-`https://huggingface.co/spaces/<your-username>/park`
-
-The deployed space includes:
-- **Web Interface** at `/web` — Interactive UI for exploring the environment
-- **API Documentation** at `/docs` — Full OpenAPI/Swagger interface
-- **Health Check** at `/health` — Container health monitoring
-- **WebSocket** at `/ws` — Persistent session endpoint for low-latency interactions
-
-## Development & Testing
-
-### Test the Environment Directly (No Server)
-
-```bash
-# Test environment logic without starting HTTP server
-python3 server/park_environment.py
-```
-
-This verifies that:
-- Environment resets correctly across all 3 tasks
-- Step executes all 5 actions properly
-- State tracking and fuel/time limits work
-- Rewards are calculated correctly
-- `grade()` returns a value in 0.0–1.0
-
-### Run Tests
-
-```bash
-# From project root
-python3 -m pytest tests/ -v
-```
+| `easy` | 0.75 – 0.90 |
+| `medium` | 0.70 – 0.85 |
+| `hard` | 0.50 – 0.78 |
 
 ## API Reference
 
@@ -281,9 +270,7 @@ python3 -m pytest tests/ -v
 Reset the environment and start a new episode.
 
 ```json
-{
-  "task": "easy"
-}
+{ "task": "easy" }
 ```
 
 Returns a `State` object with the initial observation.
@@ -305,40 +292,35 @@ Returns a `State` object with the new observation, reward, done flag, and info.
 
 ### GET `/state`
 
-Get the current environment state without taking an action.
+Get the current environment state without taking an action. Returns current episode metadata including `episode_id`, `step_count`, `done`, `task`, and `observation`.
 
-Returns current episode metadata including `episode_id`, `step_count`, `done`, `task`, and `observation`.
+### GET `/grade`
+
+Returns the final score (0.0 → 1.0) for the completed episode.
+
+```json
+{ "score": 0.823 }
+```
 
 ### GET `/health`
 
 Health check endpoint. Returns `{"status": "ok"}` when the server is running.
-
-## Project Structure
-
-```
-park/
-├── Dockerfile                  # Container image definition (root, used by HF Spaces)
-├── README.md                   # This file
-├── openenv.yaml                # OpenEnv manifest with task definitions
-├── pyproject.toml              # Project metadata and dependencies
-├── uv.lock                     # Locked dependencies (generated)
-├── __init__.py                 # Module exports (ParkAction, ParkObservation, ParkEnv)
-├── client.py                   # ParkEnv HTTP client
-├── models.py                   # Action, Observation, and Reward Pydantic models
-├── inference.py                # Baseline inference script (runs all 3 tasks)
-└── server/
-    ├── __init__.py             # Server module exports
-    ├── park_environment.py     # Core environment logic (step, reset, grade)
-    ├── app.py                  # FastAPI application (HTTP + WebSocket endpoints)
-    ├── requirements.txt        # Server dependencies
-    └── Dockerfile              # Server-only Dockerfile (for local builds)
-```
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `HF_TOKEN` | Yes (for inference) | Your Hugging Face API token |
-| `OPENAI_API_KEY` | Alternative to HF_TOKEN | OpenAI-compatible API key |
 | `API_BASE_URL` | No | LLM API base URL (default: `https://router.huggingface.co/v1`) |
 | `MODEL_NAME` | No | Model to use for inference (default: `Qwen/Qwen2.5-72B-Instruct`) |
+| `LOCAL_IMAGE_NAME` | No | Docker image name for local runs (default: `park-env:latest`) |
+
+## Testing
+
+```bash
+# Test environment logic directly (no server required)
+python3 server/park_environment.py
+
+# Run test suite
+python3 -m pytest tests/ -v
+```
